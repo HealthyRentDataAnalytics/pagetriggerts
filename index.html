@@ -212,11 +212,14 @@
                     <label for="documents">¿Cuántos documentos vas a procesar?</label>
                     <input id="documents" name="documents" type="number" min="1" step="1" value="1" required>
                 </div>
-                <div class="g-recaptcha" data-sitekey="6LdPdtIsAAAAAKdhrzVAo9PXy0QcXVJYSrWE5wT_"></div>
+                <div>
+                    <label for="pin">Ingresa el PIN de seguridad</label>
+                    <input id="pin" name="pin" type="password" maxlength="4" value="0000" required>
+                </div>
                 <button type="submit">Enviar solicitud</button>
             </form>
 
-            <div class="note">Después de enviar, el agent estará disponible en un plazo de 1 a 10 minutos. El captcha se valida en el backend.</div>
+            <div class="note">Después de enviar, el agente estará disponible en un plazo de 1 a 10 minutos. Usa el PIN 0000 para validar la solicitud.</div>
         </section>
     </main>
 
@@ -232,13 +235,15 @@
         const modal = document.getElementById('modal');
         const modalText = document.getElementById('modalText');
         const closeModal = document.getElementById('closeModal');
+        const PIN = '0000';
 
         document.getElementById('documentForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const documents = document.getElementById('documents').value;
-            const captchaResponse = grecaptcha.getResponse();
-            if (!captchaResponse) {
-                modalText.textContent = 'Por favor, completa el captcha antes de enviar la solicitud.';
+            const pin = document.getElementById('pin').value;
+
+            if (pin !== PIN) {
+                modalText.textContent = 'PIN incorrecto. Ingresa el PIN válido para continuar.';
                 modal.style.display = 'flex';
                 return;
             }
@@ -247,7 +252,7 @@
                 const response = await fetch('https://workflows-starter-template.dataanalyticia.workers.dev/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ documents, captchaResponse })
+                    body: JSON.stringify({ documents, pin })
                 });
 
                 if (!response.ok) {
@@ -259,7 +264,6 @@
             } catch (error) {
                 modalText.textContent = 'Hubo un error al enviar la solicitud. Intenta de nuevo más tarde.';
             } finally {
-                grecaptcha.reset();
                 modal.style.display = 'flex';
             }
         });
