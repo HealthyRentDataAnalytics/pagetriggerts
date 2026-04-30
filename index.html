@@ -212,11 +212,11 @@
                     <label for="documents">¿Cuántos documentos vas a procesar?</label>
                     <input id="documents" name="documents" type="number" min="1" step="1" value="1" required>
                 </div>
-                <div class="g-recaptcha" data-sitekey="TU_SITE_KEY_AQUI"></div>
+                <div class="g-recaptcha" data-sitekey="6LdPdtIsAAAAAKdhrzVAo9PXy0QcXVJYSrWE5wT_"></div>
                 <button type="submit">Enviar solicitud</button>
             </form>
 
-            <div class="note">Después de enviar, el agente estará disponible en un plazo de 1 a 10 minutos.</div>
+            <div class="note">Después de enviar, el agent estará disponible en un plazo de 1 a 10 minutos. El captcha se valida en el backend.</div>
         </section>
     </main>
 
@@ -233,7 +233,7 @@
         const modalText = document.getElementById('modalText');
         const closeModal = document.getElementById('closeModal');
 
-        document.getElementById('documentForm').addEventListener('submit', (event) => {
+        document.getElementById('documentForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const documents = document.getElementById('documents').value;
             const captchaResponse = grecaptcha.getResponse();
@@ -243,8 +243,25 @@
                 return;
             }
 
-            modalText.textContent = `Solicitud recibida para procesar ${documents} documento${documents === '1' ? '' : 's'}. El agente estará disponible en un plazo de 1 a 10 minutos.`;
-            modal.style.display = 'flex';
+            try {
+                const response = await fetch('https://workflows-starter-template.dataanalyticia.workers.dev/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ documents, captchaResponse })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error en servidor');
+                }
+
+                const data = await response.json().catch(() => null);
+                modalText.textContent = data?.message || `Solicitud recibida para procesar ${documents} documento${documents === '1' ? '' : 's'}. El agente estará disponible en un plazo de 1 a 10 minutos.`;
+            } catch (error) {
+                modalText.textContent = 'Hubo un error al enviar la solicitud. Intenta de nuevo más tarde.';
+            } finally {
+                grecaptcha.reset();
+                modal.style.display = 'flex';
+            }
         });
 
         closeModal.addEventListener('click', () => {
